@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: Mochileiro API
+  version: 1.0.0
+  description: API de domínio único para orientação de viagens. Provedor demo por padrão; integração Gemini opcional.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Verifica disponibilidade da aplicação
+      responses:
+        '200':
+          description: Disponível
+  /metrics:
+    get:
+      summary: Métricas textuais no formato Prometheus
+      responses:
+        '200':
+          description: Métricas
+          content:
+            text/plain:
+              schema: { type: string }
+  /api/consultas:
+    post:
+      summary: Solicita orientação de viagem
+      operationId: criarConsulta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pergunta]
+              properties:
+                pergunta:
+                  type: string
+                  minLength: 10
+                  maxLength: 1000
+                sessionId:
+                  type: string
+                  pattern: '^[a-zA-Z0-9_-]{1,64}$'
+            example:
+              pergunta: Quero um roteiro econômico de três dias em Lisboa
+              sessionId: teste-01
+      responses:
+        '200':
+          description: Resposta do assistente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [resposta, provider]
+                properties:
+                  resposta: { type: string }
+                  sessionId: { type: string }
+                  provider: { type: string, enum: [demo, ai] }
+        '400': { description: Requisição inválida }
+        '413': { description: Corpo muito grande }
+        '415': { description: Tipo de conteúdo não suportado }
+        '502': { description: Falha do provedor }

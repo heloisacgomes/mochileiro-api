@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install (zero dependencies)
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Lint (syntax validation)
+        run: npm run lint
+      - name: Unit and integration tests with coverage
+        run: npm run test:coverage
+      - name: Verify Docker build
+        run: docker build -t mochileiro-api:ci .
