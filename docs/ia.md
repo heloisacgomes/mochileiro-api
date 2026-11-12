@@ -1,20 +1,61 @@
-# Declaração de uso de IA
 
-A assistência de IA foi utilizada na elaboração inicial do projeto e da documentação. A pessoa responsável pela entrega deve revisar, compreender, executar e assumir as decisões técnicas.
+# Uso de Inteligência Artificial
 
-## Prompts relevantes (resumo fiel do pedido)
+## Contexto
 
-1. “Revise os pontos essenciais de entrega e faça exatamente todos eles” — checklist dos slides do Projeto B (Full Cycle): domínio único, Compose, padrão justificado, testes, cobertura, CI, .env.example, logs, métrica, SLO, README, ADR, OpenAPI e smoke k6.
-2. “Quero criar outro projeto” — exigência de novo repositório, separado do Mochileiro original.
-3. “Mas se eu não quiser continuar o n8n, não fica melhor? Criar um novo projeto mas com base no Mochileiro” — nova API autônoma baseada no conceito do agente anterior.
+Durante o desenvolvimento do Mochileiro API, foram
+utilizadas ferramentas de inteligência artificial
+como apoio à implementação, à organização da
+arquitetura, à documentação e à resolução de problemas.
 
-## Decisões propostas pela IA, a revisar
+O projeto parte do conceito do Mochileiro AI Agent,
+desenvolvido anteriormente com n8n e Gemini, e propõe
+uma implementação independente em Node.js.
 
-- Node.js 22 sem dependências obrigatórias, em vez de Express/TypeScript, para minimizar instalação e armazenamento.
-- Strategy Pattern com `DemoTravelProvider` e `GeminiTravelProvider`.
-- Endpoint principal `POST /api/consultas`.
-- Teste de CI com provedor demo, sem segredos.
+## Aplicação no desenvolvimento
 
-## Responsabilidade
+A assistência de IA contribuiu para:
 
-A estudante deve validar configuração, executar testes e CI, realizar e registrar medição real do k6 e revisar toda a implementação antes de entregar. Não declarar que medições ou deploy ocorreram quando não ocorreram.
+- Análise dos requisitos do Projeto B.
+- Proposição da estrutura inicial do backend.
+- Geração de partes do código, testes e documentação.
+- Orientações sobre integração com a API Gemini.
+- Identificação e correção de problemas de configuração.
+- Apoio à interpretação de resultados de testes.
+
+## Validação prática
+
+As atividades de configuração, execução e validação
+foram realizadas no ambiente local da desenvolvedora.
+
+Entre as verificações realizadas estão:
+
+- Inicialização da API e teste do endpoint de saúde.
+- Requisições HTTP ao endpoint de consultas.
+- Configuração e teste real da integração Gemini.
+- Correção do limite de geração de respostas.
+- Execução de testes automatizados.
+- Execução de smoke test com Grafana k6.
+- Registro das métricas reais de desempenho.
+
+## Exemplos de solicitações à IA
+
+- Apoio à identificação dos requisitos técnicos
+  e documentos necessários ao Projeto B.
+- Proposição de uma API independente do n8n,
+  preservando o conceito original do Mochileiro.
+- Auxílio na implementação do padrão Strategy
+  para abstrair os provedores de resposta.
+- Investigação de falhas nos testes automatizados
+  e na configuração do Gemini.
+- Orientação para testes de desempenho e
+  documentação dos resultados.
+
+## Responsabilidade técnica
+
+A utilização de inteligência artificial não substitui
+a compreensão, a revisão e a validação técnica.
+
+A responsabilidade pela entrega, pelas configurações
+utilizadas, pela verificação dos resultados e pelas
+decisões finais do projeto é da desenvolvedora.

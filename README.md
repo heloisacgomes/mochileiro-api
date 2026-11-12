@@ -1,109 +1,435 @@
-# Projeto B — Mochileiro API (Full Cycle)
+# Mochileiro API
 
-**Nível declarado: B — simples.** API REST de domínio único para consultas sobre viagens, inspirada no projeto anterior Mochileiro AI Agent. Este é um **projeto novo**, sem dependência do n8n. Não é marketplace nem possui módulos de catálogo/pedidos.
+API REST para assistência inteligente no planejamento
+de viagens, desenvolvida com Node.js e integração
+ao Google Gemini.
+
+O Mochileiro API é uma evolução do conceito do
+[Mochileiro AI Agent](https://github.com/heloisacgomes/mochileiro-ai-agent),
+projeto desenvolvido anteriormente com n8n.
+
+Nesta versão, a aplicação possui backend próprio,
+sem dependência do n8n, com foco em organização
+de código, testes automatizados, observabilidade
+e execução padronizada.
+
+**Projeto Final Full Cycle — Projeto B (Simples)**
+
+## Funcionalidades
+
+- Receber consultas sobre destinos e viagens.
+- Gerar orientações personalizadas com Google Gemini.
+- Disponibilizar respostas demonstrativas para testes.
+- Validar dados recebidos nas requisições.
+- Tratar erros de entrada e de serviços externos.
+- Disponibilizar healthcheck e métricas HTTP.
+- Registrar logs estruturados das requisições.
 
 ## Tecnologias
 
-Node.js 22 (HTTP nativo, JavaScript ESM), teste nativo `node:test`, GitHub Actions, Docker Compose, OpenAPI 3.1, logs JSON, métricas Prometheus e k6. **Sem dependências npm obrigatórias.** Integração opcional ao Gemini por HTTP.
+- Node.js 22
+- JavaScript (ES Modules)
+- HTTP nativo do Node.js
+- Google Gemini API
+- Node Test Runner
+- Docker e Docker Compose
+- GitHub Actions
+- OpenAPI 3.1
+- Grafana k6
 
-## Iniciar sem Docker (recomendado para computadores com pouco espaço)
+A implementação não exige bibliotecas npm externas
+para executar a aplicação.
+
+## Arquitetura
+
+A aplicação utiliza separação de responsabilidades
+e o padrão de projeto Strategy para desacoplar
+o serviço principal dos provedores de resposta.
+
+Fluxo principal:
+
+Cliente
+  |
+  v
+API HTTP
+  |
+  v
+Validação da consulta
+  |
+  v
+TravelService
+  |
+  v
+TravelProvider
+  |
+  +-- DemoTravelProvider
+  |
+  +-- GeminiTravelProvider
+  |
+  v
+Resposta JSON
+
+O Strategy Pattern permite alternar o provedor
+sem modificar a lógica principal do serviço.
+
+A decisão arquitetural está documentada em:
+[ADR 0001](docs/adr/0001-decisao.md).
+
+## Estrutura do projeto
+
+```text
+mochileiro-api/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── docs/
+│   ├── adr/
+│   │   └── 0001-decisao.md
+│   ├── desempenho.md
+│   ├── ia.md
+│   └── openapi.yaml
+├── scripts/
+│   └── check-coverage.js
+├── src/
+│   ├── app.js
+│   ├── config.js
+│   ├── observability.js
+│   ├── providers.js
+│   ├── server.js
+│   ├── service.js
+│   └── validation.js
+├── tests/
+│   ├── integration.test.js
+│   ├── smoke.js
+│   └── validation.test.js
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── CONTRIBUTORS.md
+├── Dockerfile
+├── compose.yml
+├── package.json
+└── README.md
+```
+
+## Como executar localmente
+
+### Requisitos
+
+- Node.js 22 ou superior
+- npm
+- Acesso à internet para utilizar o Gemini
+
+Clone o repositório:
 
 ```bash
-node --version # requer >=22
-npm install # não instala bibliotecas de runtime
+git clone https://github.com/heloisacgomes/mochileiro-api.git
+cd mochileiro-api
+```
+
+Instale as dependências declaradas no projeto:
+
+```bash
+npm install
+```
+
+Inicie a API:
+
+```bash
 npm start
 ```
 
-Abrir `http://localhost:3000/health`. O modo padrão é `demo`: gera uma orientação determinística e **não representa IA real**.
+Por padrão, a aplicação utiliza o provedor demo.
 
-## Iniciar com Docker (um comando)
+Acesse:
 
-```bash
-docker compose up --build -d
-```
+http://localhost:3000/health
 
-No Docker a API ficará em `http://localhost:3000` (exposta somente na máquina local).
-
-## Consultar uma viagem
-
-```bash
-curl -i -X POST http://localhost:3000/api/consultas \
-  -H 'Content-Type: application/json' \
-  -d '{"pergunta":"Quero dicas para conhecer Lisboa em três dias","sessionId":"teste-01"}'
-```
-
-Exemplo resumido de resposta demo:
+Resposta esperada:
 
 ```json
-{"resposta":"Mochileiro (demonstração): ...","sessionId":"teste-01","provider":"demo"}
+{
+  "status": "ok",
+  "service": "mochileiro-api"
+}
 ```
 
-## Ativar o Gemini real (opcional)
+## Integração com Google Gemini
 
-Crie `.env` local copiando `.env.example`, altere `AI_PROVIDER=gemini` e configure `GEMINI_API_KEY` obtida na sua própria conta. No Node 22, execute:
+A aplicação permite utilizar o Google Gemini
+para gerar respostas personalizadas.
+
+Crie um arquivo `.env` na raiz do projeto,
+utilizando `.env.example` como referência.
+
+Exemplo de configuração:
+
+```dotenv
+PORT=3000
+AI_PROVIDER=gemini
+GEMINI_API_KEY=SUA_CHAVE
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MAX_OUTPUT_TOKENS=4096
+```
+
+A chave deve ser gerada no Google AI Studio:
+
+https://aistudio.google.com/apikey
+
+Inicie a aplicação com as variáveis de ambiente:
 
 ```bash
 node --env-file=.env src/server.js
 ```
 
-No Docker Compose, ele lê as variáveis `.env` na inicialização. Nunca faça commit de `.env`. Sem chave, o modo `gemini` falha na inicialização de propósito. O modelo padrão pode ser alterado em `GEMINI_MODEL`. A integração real exige internet, chave válida, modelo disponível e disponibilidade do provedor; **não está certificada por testes reais nesta entrega**.
+O projeto utiliza integração HTTP direta com
+a API Gemini, sem dependência do n8n.
 
-## Testes e CI
+O limite padrão de saída é de 4096 tokens,
+com timeout de 45 segundos.
+
+Caso a resposta atinja o limite de tokens,
+a aplicação identifica a interrupção e
+trata a geração como erro.
+
+**Segurança:** nunca publique o arquivo `.env`
+ou compartilhe sua chave de API.
+
+A integração depende da disponibilidade
+do modelo, conectividade e limites do provedor.
+
+## Endpoints
+
+### GET /health
+
+Verifica o estado básico da aplicação.
+
+Exemplo:
+
+```bash
+curl http://localhost:3000/health
+```
+
+### POST /api/consultas
+
+Recebe uma pergunta relacionada a viagens
+e retorna a resposta do provedor configurado.
+
+Exemplo:
+
+```bash
+curl -X POST http://localhost:3000/api/consultas \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pergunta": "Monte um roteiro econômico de 3 dias em Paris",
+    "sessionId": "viagem-01"
+  }'
+```
+
+Estrutura da resposta:
+
+```json
+{
+  "resposta": "Sugestões e orientações para a viagem...",
+  "sessionId": "viagem-01",
+  "provider": "ai"
+}
+```
+
+No modo demonstrativo, o campo provider
+é retornado como "demo".
+
+O sessionId identifica a consulta, mas
+não implementa persistência de conversas.
+
+### GET /metrics
+
+Disponibiliza métricas em formato compatível
+com Prometheus.
+
+O monitoramento inclui requisições HTTP
+e medidas de latência mantidas em memória.
+
+As métricas são reiniciadas quando o
+processo da aplicação é encerrado.
+
+## Testes automatizados
+
+O projeto utiliza o módulo nativo node:test.
+
+Os testes contemplam:
+
+- Validação das entradas.
+- Configuração da aplicação.
+- Utilização do Strategy Pattern.
+- Simulação de respostas do Gemini.
+- Tratamento de erros HTTP.
+- Identificação de respostas interrompidas.
+- Métricas e observabilidade.
+- Integração entre as camadas HTTP.
+
+Executar testes:
+
+```bash
+npm test
+```
+
+Executar testes com cobertura mínima:
+
+```bash
+npm run test:coverage
+```
+
+Verificar sintaxe:
 
 ```bash
 npm run lint
-npm test
-npm run coverage
-npm run test:coverage # exige cobertura de linhas >= 80%
 ```
 
-`lint` neste MVP significa **checagem sintática**, não aplicação de um conjunto completo de regras ESLint. Testes cobrem validação, configuração, Strategy e integração HTTP real no processo, com o Gemini simulado. A cobertura é reportada pelo Node e o pipeline exige no mínimo **80% de linhas** por `npm run test:coverage`. Em execução local de validação, foram observadas **99,33% de linhas** (15 testes aprovados). Pipeline: `.github/workflows/ci.yml` (`install`, `lint`, testes com cobertura mínima e build Docker). Para link verde, faça push ao GitHub e copie a URL de uma execução bem-sucedida na aba Actions.
+A meta mínima declarada é de 80% de
+cobertura de linhas.
 
-## Saúde, observabilidade e SLO
+O comando de lint realiza verificação
+sintática, não uma análise completa
+com ESLint.
 
-- `GET /health`: healthcheck.
-- `GET /metrics`: contador de requisições por rota/método/status e p95 observacional das consultas em memória; números zeram no reinício.
-- Logs: JSON para stdout com `requestId`, rota, método, status e latência. Não loga a pergunta nem a chave.
-- SLO inicial: **95% das consultas demo em até 500 ms** num período de 30 dias. Este é um objetivo, não um resultado já comprovado. Consultas Gemini têm desempenho externo distinto.
-- Performance e reprodução: [`docs/desempenho.md`](docs/desempenho.md).
+## Docker Compose
 
-## Arquitetura e documentação
+A aplicação possui Dockerfile e compose.yml
+para padronização da execução em containers.
 
-- Fluxo: Cliente → servidor HTTP → validação → `TravelService` → `TravelProvider` (`demo` ou `gemini`) → JSON.
-- Padrão de projeto: **Strategy**; o serviço não conhece detalhes de API externa.
-- Decisão arquitetural: [`docs/adr/0001-decisao.md`](docs/adr/0001-decisao.md).
-- Contrato: [`docs/openapi.yaml`](docs/openapi.yaml) (pode abrir no Swagger Editor).
-- Declaração de uso de IA: [`docs/ia.md`](docs/ia.md).
-- Contribuições: [`CONTRIBUTORS.md`](CONTRIBUTORS.md).
+Para construir e iniciar:
 
-## Limitações
+```bash
+docker compose up --build -d
+```
 
-Não há persistência, histórico de sessões, preço/voos ao vivo nem consulta garantida de vistos. `sessionId` só é devolvido, não ativa memória. O modo demo é para desenvolvimento e testes, não uma alternativa à IA real. A API é educacional, não possui autenticação nem limitação por usuário; não expor publicamente antes de acrescentar esses controles.
+Consultar o estado:
 
-## Checklist de entrega
+```bash
+docker compose ps
+```
 
-- [x] Projeto B, domínio único, endpoint real e Strategy justificado
-- [x] Docker Compose em um comando
-- [x] Testes unitários e teste de integração HTTP
-- [x] Pipeline CI configurado (verde **depende de execução no GitHub**)
-- [x] `.env.example` e `.gitignore`, logs estruturados, métrica, SLO definido
-- [x] README, ADR, OpenAPI, k6 smoke test, `docs/desempenho.md`, `CONTRIBUTORS.md`, `docs/ia.md`
-- [ ] Medição k6 real e relatório com números
-- [ ] Publicação no GitHub e link da execução verde do CI
-- [ ] Revisão humana e validação do provedor Gemini com credencial
+Encerrar:
 
+```bash
+docker compose down
+```
 
-### Limite de geração do Gemini
+A API é disponibilizada em:
 
-A aplicação utiliza `GEMINI_MAX_OUTPUT_TOKENS=4096` como limite
-padrão de saída e timeout de 45 segundos.
+http://localhost:3000
 
-O valor pode ser configurado no arquivo `.env`, dentro
-do intervalo de 128 a 8192 tokens.
+A configuração do Compose utiliza variáveis
+de ambiente para selecionar o provedor.
 
-Se o Gemini retornar `finishReason=MAX_TOKENS`, a aplicação
-tratará a resposta como erro, evitando retornar um roteiro
-incompleto como se estivesse finalizado.
+## Integração contínua
 
-A integração depende de chave válida, acesso à internet,
-disponibilidade do Gemini e limites da conta utilizada.
+O projeto contém um workflow do GitHub Actions:
+
+.github/workflows/ci.yml
+
+A pipeline foi configurada para executar:
+
+- Instalação de dependências.
+- Verificação sintática.
+- Testes automatizados.
+- Verificação de cobertura mínima.
+- Build da imagem Docker.
+
+A execução da pipeline precisa ser
+confirmada na aba Actions do GitHub.
+
+## Observabilidade e SLO
+
+A aplicação registra logs JSON no stdout,
+com informações de requisição, status
+e tempo de resposta.
+
+A configuração evita registrar diretamente
+o conteúdo das perguntas e a chave do Gemini.
+
+Também disponibiliza métricas HTTP no endpoint:
+
+GET /metrics
+
+SLO inicial proposto:
+
+95% das consultas no modo demonstrativo
+devem ser concluídas em até 500 ms.
+
+Esse SLO é um objetivo operacional e não
+representa comprovação de disponibilidade
+contínua em produção.
+
+## Teste de desempenho
+
+Foi realizado um smoke test local utilizando
+Grafana k6 v2.4.0, com um usuário virtual
+durante 30 segundos.
+
+### Resultados
+
+| Métrica | Resultado |
+|---|---|
+| Requisições HTTP | 30 |
+| Verificações aprovadas | 60/60 |
+| Latência média | 5,86 ms |
+| Latência p95 | 3,42 ms |
+| Latência máxima | 125,4 ms |
+| Taxa de falhas HTTP | 0,00% |
+| Threshold p95 | < 500 ms |
+| Threshold de falhas | < 1% |
+
+Os thresholds definidos foram atendidos.
+
+O teste foi executado localmente com o
+provedor demo, sem chamadas externas
+ao Gemini.
+
+Portanto, esses resultados não representam
+a latência da IA nem a capacidade da
+aplicação sob carga elevada.
+
+Relatório completo:
+[docs/desempenho.md](docs/desempenho.md)
+
+## Documentação
+
+- [Decisão arquitetural (ADR)](docs/adr/0001-decisao.md)
+- [Contrato OpenAPI](docs/openapi.yaml)
+- [Relatório de desempenho](docs/desempenho.md)
+- [Uso de inteligência artificial](docs/ia.md)
+- [Autoria](CONTRIBUTORS.md)
+
+## Limitações e melhorias futuras
+
+A versão atual não implementa:
+
+- Persistência de consultas em banco de dados.
+- Histórico ou memória conversacional.
+- Busca de preços e voos em tempo real.
+- Consulta automatizada a bases oficiais de vistos.
+- Autenticação de usuários.
+- Rate limiting por usuário.
+
+Informações geradas pela IA podem estar
+desatualizadas e devem ser verificadas
+em fontes oficiais.
+
+A aplicação foi desenvolvida com finalidade
+educacional e não deve ser exposta
+publicamente sem controles adicionais
+de segurança e utilização.
+
+## Sobre o projeto
+
+O Mochileiro API foi desenvolvido como
+projeto individual para aplicação de
+conceitos de desenvolvimento backend,
+arquitetura de software, integração com
+IA, testes automatizados e práticas
+Full Cycle.
+
+**Desenvolvedora:** Heloísa Gomes  
+**GitHub:** [@heloisacgomes](https://github.com/heloisacgomes)
