@@ -12,6 +12,24 @@ O projeto parte do conceito do Mochileiro AI Agent,
 desenvolvido anteriormente com n8n e Gemini, e propõe
 uma implementação independente em Node.js.
 
+## Prompts relevantes
+
+As principais solicitações utilizadas foram:
+
+1. "Tenho um projeto para desenvolver até amanhã,
+me diga se é possível nesse prazo e me diga se é
+possível reutilizar o que já tenho do Mochileiro,
+quero continuar ele, se couber no escopo do
+novo projeto."
+
+2. "Mas se eu não quiser continuar o n8n, não
+fica melhor? Criar um novo projeto mas com
+base no Mochileiro."
+
+3. "Revise os pontos essenciais de entrega e
+faça uma lista para que eu possa seguir."
+
+
 ## Aplicação no desenvolvimento
 
 A assistência de IA contribuiu para:
